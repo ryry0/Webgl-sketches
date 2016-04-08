@@ -10,14 +10,14 @@ main : Signal Graphics.Element.Element
 main = Signal.map show <| genrandfloat 0 10
 --}
 
-genrandfloat : Float -> Float -> Signal Float
-genrandfloat low high =
-  Signal.map (randfloat low high) timeseed
+genrandfloat : Float -> Float -> Signal Time.Time -> Signal Float
+genrandfloat low high time =
+  Signal.map (randfloat low high) (timeseed time)
 
 randfloat : Float -> Float -> Random.Seed -> Float
 randfloat low high seed =
   seed |> (Random.generate <| Random.float low high) |> fst
 
-timeseed : Signal Random.Seed
-timeseed =
-  Signal.map Random.initialSeed <| Signal.map round <| Time.every second
+timeseed : Signal Time.Time -> Signal Random.Seed
+timeseed time =
+  Signal.map Random.initialSeed <| Signal.map round <| time
