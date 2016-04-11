@@ -6,11 +6,20 @@ import Math.Vector2 exposing (..)
 import Math.Matrix4 exposing (..)
 import WebGL exposing (..)
 
+type alias Point = Vec3
+
+type alias Coord = Vec3
+
 type alias Vertex =
   { a_position : Vec3
   , color : Vec3
   }
 
+
+type alias TexturedVertex =
+  { a_position : Vec3
+  , a_coord : Vec3
+  }
 
 cube : Drawable Vertex
 cube =
@@ -43,13 +52,27 @@ rectangle : Drawable Vertex
 rectangle =
   let
       bot_left = vec3 0 0 0
-      top_left = vec3 0 0.1 0
-      bot_right = vec3 0.1 0 0
-      top_right = vec3 0.1 0.1 0
+      top_left = vec3 0 1 0
+      bot_right = vec3 1 0 0
+      top_right = vec3 1 1 0
   in
   Triangle
   [ triangle blue bot_left top_left top_right
   , triangle red  bot_left top_right bot_right
+  ]
+
+rectangleTextured : Drawable TexturedVertex
+rectangleTextured =
+  let
+      bot_left = vec3 0 0 0
+      top_left = vec3 0 1 0
+      bot_right = vec3 1 0 0
+      top_right = vec3 1 1 0
+      vert a  = { a_position = a, a_coord = a }
+  in
+  Triangle
+  [ (vert top_left, vert top_right, vert bot_left)
+  , (vert bot_left, vert top_right, vert bot_right)
   ]
 
 triangle : Color -> Vec3 -> Vec3 -> Vec3 -> (Vertex, Vertex, Vertex)
@@ -66,4 +89,3 @@ triangle rawColor a b c =
       Vertex position color
   in
      (vertex a, vertex b, vertex c)
-
