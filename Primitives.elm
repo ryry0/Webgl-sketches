@@ -64,15 +64,21 @@ rectangle =
 rectangleTextured : Drawable TexturedVertex
 rectangleTextured =
   let
-      bot_left = vec3 0 0 0
-      top_left = vec3 0 1 0
-      bot_right = vec3 1 0 0
+      bot_left = vec3 -1 -1 0
+      top_left = vec3 -1 1 0
+      bot_right = vec3 1 -1 0
       top_right = vec3 1 1 0
-      vert a  = { a_position = a, a_coord = a }
+      bot_left_tex = vec3 0 0 0
+      top_left_tex = vec3 0 1 0
+      bot_right_tex = vec3 1 0 0
+      top_right_tex = vec3 1 1 0
+      vert a b = { a_position = a, a_coord = b }
   in
   Triangle
-  [ (vert top_left, vert top_right, vert bot_left)
-  , (vert bot_left, vert top_right, vert bot_right)
+  [ (vert top_left top_left_tex, vert top_right top_right_tex
+  , vert bot_left bot_left_tex)
+  , (vert bot_left bot_left_tex, vert top_right top_right_tex
+  , vert bot_right bot_right_tex)
   ]
 
 triangle : Color -> Vec3 -> Vec3 -> Vec3 -> (Vertex, Vertex, Vertex)
