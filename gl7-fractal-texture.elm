@@ -9,12 +9,13 @@ import Randfloat
 import Primitives exposing (cube)
 import Mouse
 import Task exposing (Task)
+import Debug
 
 -- Main
 
 main : Signal Element -- A changing drawable element over time.
 main = -- map our scene onto webgl
-         Signal.map2 view texture.signal update
+  Signal.map2 view texture.signal update
 
 -- Model
 
@@ -33,13 +34,14 @@ texture =
 
 port textureFetcher : Task WebGL.Error ()
 port textureFetcher =
-  loadTexture "/textures/fractal-texture.png"
+  loadTexture "/textures/fractal-texture2.png"
     `Task.andThen` \tex -> Signal.send texture.address (Just tex)
 
 -- Update
 
 update : Signal Float
-update = Signal.map toFloat <| Signal.map fst Mouse.position
+update = --Signal.map toFloat <| Signal.map fst Mouse.position
+  Signal.foldp (\dt time -> time + dt/2) 0 (fps 30)
 
 -- View
 
@@ -47,10 +49,10 @@ view : Maybe Texture -> Float -> Element
 view maybeTexture rotation =
   case maybeTexture of
     Nothing ->
-      webgl (600, 600)
+      webgl (1000, 1000)
         []
     Just tex ->
-      webgl (600, 600)
+      webgl (1000, 1000)
           [ render vertexShader fragmentShader
           Primitives.rectangle
           { perspective = perspective, rotation = rotation, scaling = scaling, tex = tex}
@@ -83,8 +85,8 @@ uniform float rotation;
 //thanks to Oren Shoham for the inspiration.
 //can't use defines for some reason
 
-const int num_steps =  50;
-const float resolution = 600.0;
+const int num_steps =  100;
+const float resolution = 1000.0;
 //float pi = 3.1415926535897932384626433832795;
 
 vec2 cx_mul(vec2 a, vec2 b) {
@@ -94,10 +96,12 @@ vec2 cx_mul(vec2 a, vec2 b) {
 void main () {
   vec2 current_coord;
 
+  //dividing by resolution puts it into clipspace
+  //multiplying it by 2 and subtracting mirrors
   vec2 prev_coord = (gl_FragCoord.xy * 2.0 - resolution)/resolution;
 
   const float r = 0.7885;
-  float t = rotation *0.001;
+  float t = rotation *0.00005;
   vec2 c = vec2(cos(t)*r, sin(t)*r);
 
   float num_steps_applied = 0.0;
@@ -105,7 +109,11 @@ void main () {
   for (int i = 0; i < num_steps; i++) {
     num_steps_applied = float(i);
 
-    current_coord = cx_mul(prev_coord, prev_coord) + c;
+    //generate the fractal
+    //julia^4
+    current_coord = cx_mul(cx_mul(prev_coord, prev_coord), cx_mul(prev_coord, prev_coord)) + c;
+    //lambda
+    //current_coord = cx_mul(c , cx_mul(prev_coord, vec2(1.0, 0.0) - prev_coord));
 
     if (dot(current_coord, current_coord) > 4.0)
        break;
@@ -114,9 +122,9 @@ void main () {
   }
 
   float tex_x_val = (num_steps_applied == (float(num_steps) - 1.0) ? 0.0 :
-  num_steps_applied) /100.0;
+  num_steps_applied) /50.0;
 
-  gl_FragColor = texture2D(tex, vec2(tex_x_val, 0.0));
+  gl_FragColor = texture2D(tex, vec2(tex_x_val, tex_x_val));
 }
 
 |]
