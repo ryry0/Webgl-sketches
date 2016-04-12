@@ -51,9 +51,9 @@ cube =
 rectangle : Drawable Vertex
 rectangle =
   let
-      bot_left = vec3 0 0 0
-      top_left = vec3 0 1 0
-      bot_right = vec3 1 0 0
+      bot_left = vec3 -1 -1 0
+      top_left = vec3 -1 1 0
+      bot_right = vec3 1 -1 0
       top_right = vec3 1 1 0
   in
   Triangle
