@@ -21,6 +21,13 @@ type alias TexturedVertex =
   , a_coord : Vec3
   }
 
+pointcube : Drawable Vertex
+pointcube =
+  let range = [-10..10] in
+    let mapped_range = List.map vec3 range in
+      let foldrange = List.foldl (\x acc -> List.map x range :: acc) [] in
+        Points <| List.map tovertex <| List.concat <| foldrange <| List.concat <| foldrange mapped_range
+
 cube : Drawable Vertex
 cube =
   let
@@ -95,3 +102,8 @@ triangle rawColor a b c =
       Vertex position color
   in
      (vertex a, vertex b, vertex c)
+
+tovertex : Vec3 -> Vertex
+tovertex vec =
+  { a_position = vec, a_color = vec3 0.0 0.0 1.0 }
+
