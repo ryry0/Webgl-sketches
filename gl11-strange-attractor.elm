@@ -52,6 +52,9 @@ b = 8.0/3.0
 dt : Float
 dt = 0.01
 
+num_points : Int
+num_points = 3000
+
 perspective : Float -> Float  -> Mat4
 perspective winx winy =
   mul (makePerspective 45 (winx/winy) 0.01 100)
@@ -89,8 +92,16 @@ initialpoint =
    , a_time = 0.0
    }
 
+queue : List Vertex -> List Vertex
+queue list =
+  if (List.length list > num_points) then
+    List.take num_points list
+  else
+    list
+
 -- Update
 type Action = Resolution (Int, Int) | DeltaTime Float
+
 action : Signal Action
 action =
   Signal.merge
@@ -107,7 +118,7 @@ update action model =
       }
     DeltaTime dt ->
       { model
-      | renderable = genpoint (List.head model.renderable) :: model.renderable
+      | renderable = queue <| genpoint (List.head model.renderable) :: model.renderable
       , rotation = mul model.rotation <| genrotate 0.01
       }
 
@@ -126,13 +137,14 @@ view model =
       ]
 
 -- Shaders
-vertexShader : Shader { attr | a_position:Vec3, a_time : Float}
+vertexShader : Shader { attr | a_position:Vec3, a_time : Float }
   { unif | perspective:Mat4, rotation:Mat4, scaling: Mat4 }
-  {}
+  { time:Float }
 vertexShader = [glsl|
 
 attribute vec3 a_position;
 attribute float a_time;
+varying float time;
 
 uniform mat4 perspective;
 uniform mat4 scaling;
@@ -140,17 +152,24 @@ uniform mat4 rotation;
 
 void main () {
   gl_Position = perspective * scaling * rotation * vec4(a_position, 1.0);
+  time = a_time;
 }
 
 |]
 
-fragmentShader : Shader {} u {}
+fragmentShader : Shader {} u { time:Float }
 fragmentShader = [glsl|
 
+
 precision mediump float;
+varying float time;
+
+const float PI = 3.14159265359;
+const float shade = 0.8;
 
 void main () {
-  gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+  float time_scaled = time/100.0;
+  gl_FragColor = shade * vec4(sin(time_scaled+PI), sin(time_scaled), cos(time_scaled), 1.0);
 }
 
 |]
