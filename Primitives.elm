@@ -12,7 +12,7 @@ type alias Coord = Vec3
 
 type alias Vertex =
   { a_position : Vec3
-  , color : Vec3
+  , a_color : Vec3
   }
 
 
