@@ -19,9 +19,9 @@ main = -- map our scene onto webgl
 
 -- Model
 
-perspective : Mat4
-perspective =
-  mul (makePerspective 45 1 0.01 100)
+perspective : Float -> Float  -> Mat4
+perspective winx winy =
+  mul (makePerspective 45 (winx/winy) 0.01 100)
       (makeLookAt (vec3 0 0 1) (vec3 0 0 0) (vec3 0 1 0))
 
 scaling : Mat4
@@ -60,7 +60,7 @@ view rotation (winx, winy) =
       webgl (winx, winy)
           [ render vertexShader fragmentShader
             pointcube
-              { perspective = perspective
+              { perspective = perspective (toFloat winx) (toFloat winy)
               , rotation = rotation
               , scaling = scaling
               , resolution = (vec2 (toFloat winx) (toFloat winy))
