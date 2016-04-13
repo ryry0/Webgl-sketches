@@ -29,7 +29,6 @@ main = -- map our scene onto webgl
 
 type alias Vertex =
   { a_position : Vec3
-  , a_color : Vec3
   , a_time : Float
   }
 
@@ -40,6 +39,19 @@ type alias Model =
   , resolution : (Int, Int)
   }
 
+-- strange attractor constants
+p : Float
+p = 10.0
+
+r : Float
+r = 28.0
+
+b : Float
+b = 8.0/3.0
+
+dt : Float
+dt = 0.01
+
 perspective : Float -> Float  -> Mat4
 perspective winx winy =
   mul (makePerspective 45 (winx/winy) 0.01 100)
@@ -47,12 +59,12 @@ perspective winx winy =
 
 scaling : Mat4
 scaling =
-  Math.Matrix4.scale (vec3 0.1 0.1 0.1) Math.Matrix4.identity
+  Math.Matrix4.scale (vec3 0.01 0.01 0.01) Math.Matrix4.identity
 
 
 genrotate : Float -> Mat4
 genrotate angle =
-  rotate angle (vec3 1 1 1) Math.Matrix4.identity
+  rotate angle (vec3 0 1 0) Math.Matrix4.identity
 
 genpoint : Maybe (Vertex) -> Vertex
 genpoint maybevertex =
@@ -60,12 +72,20 @@ genpoint maybevertex =
     Nothing ->
       initialpoint
     Just vertex ->
-      { vertex | a_time = vertex.a_time + 0.1 }
+    let x = Math.Vector3.getX vertex.a_position
+        y = Math.Vector3.getY vertex.a_position
+        z = Math.Vector3.getZ vertex.a_position in
+      let dx = p * (y - x)
+          dy = (r*x) - y - (x*z)
+          dz = (x*y) - (b*z) in
+        let newx = x + dx*dt
+            newy = y + dy*dt
+            newz = z + dz*dt in
+        { a_position = vec3 newx newy newz, a_time = vertex.a_time + 0.1 }
 
 initialpoint : Vertex
 initialpoint =
-  { a_position = vec3 3.0 8.0 7.0
-   , a_color = vec3 0.0 0.0 1.0
+  { a_position = vec3 1.0 -5.0 6.0
    , a_time = 0.0
    }
 
@@ -81,64 +101,56 @@ update : Action -> Model -> Model
 update action model =
   case action of
     Resolution (x, y) ->
-    { model
-    | perspective = perspective (toFloat x) (toFloat y)
-    , resolution = (x, y)
-    }
+      { model
+      | perspective = perspective (toFloat x) (toFloat y)
+      , resolution = (x, y)
+      }
     DeltaTime dt ->
-    { model
-    | renderable = genpoint (List.head model.renderable) :: model.renderable
-    , rotation = mul model.rotation <| genrotate 0.01
-    }
+      { model
+      | renderable = genpoint (List.head model.renderable) :: model.renderable
+      , rotation = mul model.rotation <| genrotate 0.01
+      }
 
 -- View
 view : Model -> Element
 view model =
-      webgl (fst model.resolution, snd model.resolution)
-          [ render vertexShader fragmentShader
-            (LineStrip model.renderable)
-            { perspective = model.perspective
-            , rotation = model.rotation
-            , scaling = scaling
-            , resolution = vec2 (toFloat <| fst model.resolution)
-                (toFloat <| snd model.resolution)
-            }
-          ]
+  webgl (fst model.resolution, snd model.resolution)
+      [ render vertexShader fragmentShader
+        (LineStrip model.renderable)
+        { perspective = model.perspective
+        , rotation = model.rotation
+        , scaling = scaling
+        , resolution = vec2 (toFloat <| fst model.resolution)
+            (toFloat <| snd model.resolution)
+        }
+      ]
 
 -- Shaders
-vertexShader : Shader { attr | a_position:Vec3, a_color:Vec3, a_time : Float}
+vertexShader : Shader { attr | a_position:Vec3, a_time : Float}
   { unif | perspective:Mat4, rotation:Mat4, scaling: Mat4 }
-  { v_color : Vec3 }
+  {}
 vertexShader = [glsl|
 
 attribute vec3 a_position;
-attribute vec3 a_color;
 attribute float a_time;
 
 uniform mat4 perspective;
 uniform mat4 scaling;
 uniform mat4 rotation;
-varying vec3 v_color;
 
 void main () {
-
   gl_Position = perspective * scaling * rotation * vec4(a_position, 1.0);
-  v_color = a_color;
 }
 
 |]
 
-fragmentShader : Shader {} { u | rotation:Mat4, resolution:Vec2}
-  { v_color : Vec3 }
+fragmentShader : Shader {} u {}
 fragmentShader = [glsl|
 
 precision mediump float;
 
-uniform vec2 resolution;
-varying vec3 v_color;
-
 void main () {
-  gl_FragColor = vec4(v_color, 1.0);
+  gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
 |]
