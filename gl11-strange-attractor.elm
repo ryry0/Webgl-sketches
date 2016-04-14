@@ -20,7 +20,7 @@ main = -- map our scene onto webgl
     , rotation = Math.Matrix4.identity
     , perspective = perspective 1 1
     , resolution = (1000, 1000)
-    , attractor = aizawa
+    , attractor = anishchenko_astakhov
     }
     in
     let model  = Signal.foldp update initial_model action in
@@ -45,9 +45,9 @@ type alias Model =
   }
 
 scale : Float
-scale = 0.20
---0.01 for lorenzj
---0.25 for 
+scale = 0.05
+--0.01 for lorenz
+--0.20 for aizawa
 
 num_points : Int
 num_points = 8000
@@ -116,8 +116,8 @@ anishchenko_astakhov x y z =
     mu = 1.2
     eta = 0.5
     dt = 0.01
-    dy = mu*x + y - x*z
-    dx = -x
+    dx = mu*x + y - x*z
+    dy = -x
     dz = -eta * z + eta * (i x) * (x^2)
     newx = x + dx*dt
     newy = y + dy*dt
