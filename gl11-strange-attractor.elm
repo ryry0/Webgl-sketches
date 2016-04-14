@@ -20,7 +20,7 @@ main = -- map our scene onto webgl
     , rotation = Math.Matrix4.identity
     , perspective = perspective 1 1
     , resolution = (1000, 1000)
-    , attractor = bouali
+    , attractor = yu_wang
     }
     in
     let model  = Signal.foldp update initial_model action in
@@ -45,10 +45,14 @@ type alias Model =
   }
 
 scale : Float
-scale = 0.03
---0.01 for lorenz + bouali
+scale = 0.008
+--0.01 for lorenz
 --0.20 for aizawa
 --0.05 for ashchch
+--0.03 for bouali
+--0.08 for thomas
+--0.1 for coullet
+--0.008 for yu_wang
 
 num_points : Int
 num_points = 8000
@@ -77,6 +81,24 @@ genpoint attractor maybevertex =
         z = Math.Vector3.getZ vertex.a_position in
       let (newx, newy, newz) = attractor x y z in
         { a_position = vec3 newx newy newz, a_time = vertex.a_time + 0.1 }
+
+initialpoint : Vertex
+initialpoint =
+  { a_position = vec3 1.1 1.1 1.1
+   , a_time = 0.0
+   }
+-- -1.1 0 0 for aizawa
+-- -1.1 1.0 0.0 for bouali
+-- -1.1 1.1 1.1 for thomas
+-- 0.1 0.1 0.1 for coullet
+-- 1.1 1.1 1.1 for yu_wang
+
+queue : List Vertex -> List Vertex
+queue list =
+  if (List.length list > num_points) then
+    List.take num_points list
+  else
+    list
 
 lorenz : Attractor
 lorenz x y z =
@@ -139,21 +161,65 @@ bouali x y z =
     newz = z + dz*dt in
     ( newx, newy, newz )
 
+thomas : Attractor
+thomas x y z =
+  let
+    beta = 0.19
+    dt = 0.1
+    dx = (sin y) - beta * x
+    dy = (sin z) - beta * y
+    dz = (sin x) - beta * z
+    newx = x + dx*dt
+    newy = y + dy*dt
+    newz = z + dz*dt in
+    ( newx, newy, newz )
 
-initialpoint : Vertex
-initialpoint =
-  { a_position = vec3 -1.1 1.0 0.0
-   , a_time = 0.0
-   }
--- -1.1 0 0 for aizawa
--- -1.1 1.0 0.0 for bouali
+{--
+halvorsen : Attractor
+halvorsen x y z =
+  let
+    alpha = 1.4
+    dt = 0.01
+    dx = -alpha*x - 4*y - 4*z - y^2
+    dy = -alpha*y - 4*z - 4*x - z^2
+    dz = -alpha*z - 4*x - 4*y - x^2
+    newx = x + dx*dt
+    newy = y + dy*dt
+    newz = z + dz*dt in
+    ( newx, newy, newz )
+    --}
 
-queue : List Vertex -> List Vertex
-queue list =
-  if (List.length list > num_points) then
-    List.take num_points list
-  else
-    list
+coullet : Attractor
+coullet x y z =
+  let
+    alpha = 0.8
+    beta = -1.1
+    gamma = -0.45
+    delta = -1.0
+    dt = 0.01
+    dx = y
+    dy = z
+    dz = alpha*x + beta*y + gamma*z + delta*x^3
+    newx = x + dx*dt
+    newy = y + dy*dt
+    newz = z + dz*dt in
+    ( newx, newy, newz )
+
+yu_wang : Attractor
+yu_wang x y z =
+  let
+    alpha = 10
+    beta = 40
+    gamma = 2
+    delta = 2.5
+    dt = 0.001
+    dx = alpha*(y - x)
+    dy = beta*x - gamma*x*z
+    dz = e^(x*y) - delta*z
+    newx = x + dx*dt
+    newy = y + dy*dt
+    newz = z + dz*dt in
+    ( newx, newy, newz )
 
 -- Update
 type Action = Resolution (Int, Int) | DeltaTime Float
