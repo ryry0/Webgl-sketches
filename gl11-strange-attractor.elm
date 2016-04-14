@@ -20,6 +20,7 @@ main = -- map our scene onto webgl
     , rotation = Math.Matrix4.identity
     , perspective = perspective 1 1
     , resolution = (1000, 1000)
+    , attractor = aizawa
     }
     in
     let model  = Signal.foldp update initial_model action in
@@ -32,28 +33,24 @@ type alias Vertex =
   , a_time : Float
   }
 
+type alias Attractor =
+  ( Float -> Float -> Float -> (Float, Float, Float) )
+
 type alias Model =
   { renderable : List Vertex
   , rotation : Mat4
   , perspective : Mat4
   , resolution : (Int, Int)
+  , attractor : Attractor
   }
 
--- strange attractor constants
-p : Float
-p = 10.0
-
-r : Float
-r = 28.0
-
-b : Float
-b = 8.0/3.0
-
-dt : Float
-dt = 0.01
+scale : Float
+scale = 0.20
+--0.01 for lorenzj
+--0.25 for 
 
 num_points : Int
-num_points = 3000
+num_points = 8000
 
 perspective : Float -> Float  -> Mat4
 perspective winx winy =
@@ -62,15 +59,14 @@ perspective winx winy =
 
 scaling : Mat4
 scaling =
-  Math.Matrix4.scale (vec3 0.01 0.01 0.01) Math.Matrix4.identity
-
+  Math.Matrix4.scale (vec3 scale scale scale) Math.Matrix4.identity
 
 genrotate : Float -> Mat4
 genrotate angle =
   rotate angle (vec3 0 1 0) Math.Matrix4.identity
 
-genpoint : Maybe (Vertex) -> Vertex
-genpoint maybevertex =
+genpoint : Attractor -> Maybe (Vertex) -> Vertex
+genpoint attractor maybevertex =
   case maybevertex of
     Nothing ->
       initialpoint
@@ -78,17 +74,62 @@ genpoint maybevertex =
     let x = Math.Vector3.getX vertex.a_position
         y = Math.Vector3.getY vertex.a_position
         z = Math.Vector3.getZ vertex.a_position in
-      let dx = p * (y - x)
-          dy = (r*x) - y - (x*z)
-          dz = (x*y) - (b*z) in
-        let newx = x + dx*dt
-            newy = y + dy*dt
-            newz = z + dz*dt in
+      let (newx, newy, newz) = attractor x y z in
         { a_position = vec3 newx newy newz, a_time = vertex.a_time + 0.1 }
+
+lorenz : Attractor
+lorenz x y z =
+  let p = 10.0
+      r = 28.0
+      b = 8.0/3.0
+      dt = 0.01
+      dx = p * (y - x)
+      dy = (r*x) - y - (x*z)
+      dz = (x*y) - (b*z)
+      newx = x + dx*dt
+      newy = y + dy*dt
+      newz = z + dz*dt in
+      ( newx, newy, newz )
+
+aizawa : Attractor
+aizawa x y z =
+  let alpha = 0.95
+      beta = 0.7
+      gamma = 0.6
+      delta =3.5
+      zeta = 0.1
+      epsilon = 0.25
+      dt = 0.01
+      dx = (z - beta) * x - delta*y
+      dy = delta*x + ((z - beta) * y)
+      dz = gamma + alpha*z - ((z^3.0)/3.0) - (x^2+y^2)*(1+epsilon*z)+
+        zeta * z * x^3
+      newx = x + dx*dt
+      newy = y + dy*dt
+      newz = z + dz*dt in
+      ( newx, newy, newz )
+
+anishchenko_astakhov : Attractor
+anishchenko_astakhov x y z =
+  let
+    i n = if n > 0 then 1 else 0
+    mu = 1.2
+    eta = 0.5
+    dt = 0.01
+    dy = mu*x + y - x*z
+    dx = -x
+    dz = -eta * z + eta * (i x) * (x^2)
+    newx = x + dx*dt
+    newy = y + dy*dt
+    newz = z + dz*dt in
+    ( newx, newy, newz )
+
+-- bouali : Attractor
+-- bouali
 
 initialpoint : Vertex
 initialpoint =
-  { a_position = vec3 1.0 -5.0 6.0
+  { a_position = vec3 -1.1 0.0 0.0
    , a_time = 0.0
    }
 
@@ -118,7 +159,7 @@ update action model =
       }
     DeltaTime dt ->
       { model
-      | renderable = queue <| genpoint (List.head model.renderable) :: model.renderable
+      | renderable = queue <| genpoint model.attractor (List.head model.renderable) :: model.renderable
       , rotation = mul model.rotation <| genrotate 0.01
       }
 
