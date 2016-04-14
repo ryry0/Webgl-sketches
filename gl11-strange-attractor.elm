@@ -20,7 +20,7 @@ main = -- map our scene onto webgl
     , rotation = Math.Matrix4.identity
     , perspective = perspective 1 1
     , resolution = (1000, 1000)
-    , attractor = anishchenko_astakhov
+    , attractor = bouali
     }
     in
     let model  = Signal.foldp update initial_model action in
@@ -45,9 +45,10 @@ type alias Model =
   }
 
 scale : Float
-scale = 0.05
---0.01 for lorenz
+scale = 0.03
+--0.01 for lorenz + bouali
 --0.20 for aizawa
+--0.05 for ashchch
 
 num_points : Int
 num_points = 8000
@@ -124,14 +125,28 @@ anishchenko_astakhov x y z =
     newz = z + dz*dt in
     ( newx, newy, newz )
 
--- bouali : Attractor
--- bouali
+bouali : Attractor
+bouali x y z =
+  let
+    alpha = 0.3
+    zeta = 1.0
+    dt = 0.01
+    dx = x*(4-y) + alpha * z
+    dy = -y*(1-x^2)
+    dz = -x*(1.5 - zeta * z) - 0.05 * z
+    newx = x + dx*dt
+    newy = y + dy*dt
+    newz = z + dz*dt in
+    ( newx, newy, newz )
+
 
 initialpoint : Vertex
 initialpoint =
-  { a_position = vec3 -1.1 0.0 0.0
+  { a_position = vec3 -1.1 1.0 0.0
    , a_time = 0.0
    }
+-- -1.1 0 0 for aizawa
+-- -1.1 1.0 0.0 for bouali
 
 queue : List Vertex -> List Vertex
 queue list =
