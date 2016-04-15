@@ -28,14 +28,14 @@ scaling : Mat4
 scaling =
   Math.Matrix4.scale (vec3 0.02 0.02 0.02) Math.Matrix4.identity
 
-pointcube : Drawable Primitives.Vertex
+pointcube : Drawable Primitives.ColoredVertex
 pointcube =
   let range = [-10..10] in
     let mapped_range = List.map vec3 range in
       let foldrange = List.foldl (\x acc -> List.map x range :: acc) [] in
         Points <| List.map tovertex <| List.concat <| foldrange <| List.concat <| foldrange mapped_range
 
-tovertex : Vec3 -> Primitives.Vertex
+tovertex : Vec3 -> Primitives.ColoredVertex
 tovertex vec =
   { a_position = vec, a_color = vec3 0.0 0.0 1.0 }
 

@@ -51,13 +51,13 @@ view rotation =
     ]
 
 -- Shaders
-vertexShader : Shader { attr | a_position:Vec3, color:Vec3 }
+vertexShader : Shader { attr | a_position:Vec3, a_color:Vec3 }
   { unif | perspective:Mat4, rotation:Mat4, scaling: Mat4 }
   { vcolor:Vec3 }
 vertexShader = [glsl|
 
 attribute vec3 a_position;
-attribute vec3 color;
+attribute vec3 a_color;
 uniform mat4 perspective;
 uniform mat4 scaling;
 uniform mat4 rotation;
