@@ -20,7 +20,7 @@ main = -- map our scene onto webgl
     , rotation = Math.Matrix4.identity
     , perspective = perspective 1 1
     , resolution = (1000, 1000)
-    , attractor = yu_wang
+    , attractor = thomas
     }
     in
     let model  = Signal.foldp update initial_model action in
@@ -45,7 +45,7 @@ type alias Model =
   }
 
 scale : Float
-scale = 0.008
+scale = 0.08
 --0.01 for lorenz
 --0.20 for aizawa
 --0.05 for ashchch
@@ -84,7 +84,7 @@ genpoint attractor maybevertex =
 
 initialpoint : Vertex
 initialpoint =
-  { a_position = vec3 1.1 1.1 1.1
+  { a_position = vec3 -1.1 1.1 1.1
    , a_time = 0.0
    }
 -- -1.1 0 0 for aizawa
