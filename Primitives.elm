@@ -12,6 +12,10 @@ type alias Coord = Vec3
 
 type alias Vertex =
   { a_position : Vec3
+  }
+
+type alias ColoredVertex =
+  { a_position : Vec3
   , a_color : Vec3
   }
 
@@ -21,14 +25,14 @@ type alias TexturedVertex =
   , a_coord : Vec3
   }
 
-pointcube : Drawable Vertex
+pointcube : Drawable ColoredVertex
 pointcube =
   let range = [-10..10] in
     let mapped_range = List.map vec3 range in
       let foldrange = List.foldl (\x acc -> List.map x range :: acc) [] in
         Points <| List.map tovertex <| List.concat <| foldrange <| List.concat <| foldrange mapped_range
 
-cube : Drawable Vertex
+cube : Drawable ColoredVertex
 cube =
   let
     rft = vec3  1  1  1   -- right, front, top
@@ -55,7 +59,7 @@ cube =
       , triangle red rfb rbt rbb
       ]
 
-rectangle : Drawable Vertex
+rectangle : Drawable ColoredVertex
 rectangle =
   let
       bot_left = vec3 -1 -1 0
@@ -88,7 +92,7 @@ rectangleTextured =
   , vert bot_right bot_right_tex)
   ]
 
-triangle : Color -> Vec3 -> Vec3 -> Vec3 -> (Vertex, Vertex, Vertex)
+triangle : Color -> Vec3 -> Vec3 -> Vec3 -> (ColoredVertex, ColoredVertex, ColoredVertex)
 triangle rawColor a b c =
   let
     color =
@@ -99,11 +103,11 @@ triangle rawColor a b c =
           (toFloat c.blue /255)
 
     vertex position =
-      Vertex position color
+      ColoredVertex position color
   in
      (vertex a, vertex b, vertex c)
 
-tovertex : Vec3 -> Vertex
+tovertex : Vec3 -> ColoredVertex
 tovertex vec =
   { a_position = vec, a_color = vec3 0.0 0.0 1.0 }
 
