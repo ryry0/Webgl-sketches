@@ -119,25 +119,29 @@ void main () {
 -- Fragment Shader
 fragmentShader : Shader {} { unif | u_mouse_position:Vec2, u_resolution:Vec2 } {}
 fragmentShader = [glsl|
+
 precision mediump float;
 uniform vec2 u_resolution;
 uniform vec2 u_mouse_position;
 
-float sdSphere ( vec3 point, float radius );
-float sdBox( vec3 p, vec3 b );
-vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color);
-float mapScene(vec3 point); //function that fully describes scene in distance
 //tests if ray hit object
 bool rayMarch(vec3 ray_origin , vec3 ray_dir,
   out int num_iter , out float dist_traveled);
+
 vec3 compNormal(vec3 point);
+vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color);
+
+float mapScene(vec3 point); //function that fully describes scene in distance
+float sdSphere ( vec3 point, float radius );
+float sdPlane (vec3 point, vec4 normal);
+float sdBox( vec3 p, vec3 b );
 
 void main () {
   //to generate perspective matrices
-  const vec3 cam_eye = vec3(0, 0, -2);
-  const vec3 cam_up = vec3(0, 1, 0);
-  const vec3 cam_right = vec3(1, 0, 0);
-  const vec3 cam_forward = vec3(0, 0, 1);
+  const vec3 cam_eye = vec3(1.5, 1.0, -2.0); //vec3(0, 0, -2);
+  const vec3 cam_forward = normalize(-cam_eye); //vec3(0, 0, 1);
+  const vec3 cam_right = normalize(cross(vec3(0, 1, 0), cam_forward)); //vec3(1, 0, 0);
+  const vec3 cam_up = normalize(cross(cam_forward, cam_right));//vec3(0, 1, 0);
   const float focal_length = 2.0;
 
   float u = gl_FragCoord.x * 2.0/min(u_resolution.x, u_resolution.y) - 1.0;
@@ -162,9 +166,9 @@ void main () {
 
   if (ray_hit) {
     vec3 ray_loc = ray_origin + ray_dir*dist_traveled;
-    color = lambertLight(ray_loc, vec3(mouse_x, mouse_y, -2.0), vec3(0.0, 1.0, 1.0));
+    color = (lambertLight(ray_loc, vec3(mouse_x, mouse_y, -2.0), vec3(0.0, 1.0, 1.0)) +
+      lambertLight(ray_loc, vec3(0.5, 0.5, 0.5), vec3(1.0, 0.0, 0.0)))/2.0;
   }
-
 
   gl_FragColor = vec4(color, 1.0);
 } //end main
@@ -211,12 +215,14 @@ vec3 compNormal(vec3 point) {
 }
 
 vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color) {
+  const vec3 ambient_light = vec3(0);// vec3(0.01, 0.01, 0.01);
   float light_intensity = 0.0;
+
   vec3 normal = compNormal(point);
   vec3 light_dir = normalize(light_pos - point);
   light_intensity = clamp(dot(normal, light_dir), 0.0, 1.0);
 
-  return light_color * light_intensity;
+  return light_color*light_intensity + ambient_light*(1.0 - light_intensity);
 }
 
 float sdSphere (vec3 point, float radius) {
@@ -229,13 +235,23 @@ float sdBox(vec3 point, vec3 box_dim) {
          length(max(dist,0.0));
 }
 
+float udRoundBox(vec3 point, vec3 dim, float radius) {
+  return length(max(abs(point) - dim, 0.01)) - radius;
+}
+
+float sdPlane (vec3 point, vec4 normal) {
+  return dot(point, normal.xyz) + normal.w;
+}
+
 //function that fully describes the scene in distances
 float mapScene(vec3 point) {
   const float radius = 0.5;
 
-  float min1 = sdSphere(point + vec3 (-0.5, -0.0, 0.0), radius);
-  float min2 = sdBox(point + vec3 (0.0, 0.5, 0.0), vec3(0.25, 0.25, 0.25));
-  return min(min1, min2);
+  float o1 = sdSphere(point + vec3 (-0.5, 0.2, 0.0), radius);
+  float o2 =
+    udRoundBox(point + vec3 (0.5, 0.3, 0.0), vec3(0.25, 0.25, 0.25), 0.05);
+  float o3 = sdPlane(point + vec3(0.0, 0.5, 0.0), vec4(0.0, 1.0, 0.0, 1.0));
+  return min(min(o1, o2), o3);;
 }
 
 |]
