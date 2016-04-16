@@ -120,6 +120,8 @@ void main () {
 fragmentShader : Shader {} { unif | u_mouse_position:Vec2, u_resolution:Vec2 } {}
 fragmentShader = [glsl|
 
+//based on lightbits' tutorial
+
 precision mediump float;
 uniform vec2 u_resolution;
 uniform vec2 u_mouse_position;
@@ -130,6 +132,7 @@ bool rayMarch(vec3 ray_origin , vec3 ray_dir,
 
 vec3 compNormal(vec3 point);
 vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color);
+float castShadow(vec3 point, vec3 light_pos, float shadow_intensity);
 
 float mapScene(vec3 point); //function that fully describes scene in distance
 float sdSphere ( vec3 point, float radius );
@@ -218,11 +221,49 @@ vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color) {
   const vec3 ambient_light = vec3(0);// vec3(0.01, 0.01, 0.01);
   float light_intensity = 0.0;
 
-  vec3 normal = compNormal(point);
-  vec3 light_dir = normalize(light_pos - point);
-  light_intensity = clamp(dot(normal, light_dir), 0.0, 1.0);
+  float shadow = castShadow(point, light_pos, 16.0);
+  if (shadow > 0.0) {
+    vec3 normal = compNormal(point);
+    vec3 light_dir = normalize(light_pos - point);
+    light_intensity = shadow*clamp(dot(normal, light_dir), 0.0, 1.0);
+  }
 
   return light_color*light_intensity + ambient_light*(1.0 - light_intensity);
+}
+
+//reverse trace the shadow from the surface to the light
+//returns 0.0 if completely in shadow, else returns a higher value clamped @ 1.0.
+
+float castShadow(vec3 point, vec3 light_pos, float shadow_intensity) {
+  const float epsilon = 0.001;
+  const int max_steps = 64;
+
+  //should not travel farther than source
+  float max_dist = length(light_pos - point);
+
+  vec3 ray_dir = normalize(light_pos - point);
+
+  float result = 1.0;
+  float dist_traveled = 10.0 * epsilon;
+
+  for (int i = 0; i < max_steps; i++) {
+    float dist = mapScene(point + ray_dir*dist_traveled);
+
+    //we hit a surface before we hit light
+    if (dist < epsilon) {
+      result = 0.0;
+      break;
+    }
+
+    //calculate penumbra factor using how close we are to an adjacent surface
+    result = min(result, shadow_intensity * dist/dist_traveled);
+    dist_traveled += dist;
+
+    if (dist_traveled >= max_dist)
+       break;
+
+  } //end for
+  return result;
 }
 
 float sdSphere (vec3 point, float radius) {
