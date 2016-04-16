@@ -93,6 +93,7 @@ view model =
       ]
 
 -- Shaders
+-- Vertex Shader
 vertexShader : Shader { attr | a_position:Vec3, a_coord:Vec3 }
   { unif | u_perspective:Mat4, u_rotation:Mat4, u_scaling: Mat4, u_mouse_position:Vec2 }
   {}
@@ -114,48 +115,120 @@ void main () {
 
 |]
 
+
+-- Fragment Shader
 fragmentShader : Shader {} { unif | u_mouse_position:Vec2, u_resolution:Vec2 } {}
 fragmentShader = [glsl|
 precision mediump float;
 uniform vec2 u_resolution;
 
-
-//to generate perspective matrices
-const float epsilon = 0.1;
-const float radius = 0.5;
-const int max_steps = 32;
-const vec3 eye = vec3(0, 0, -1);
-const vec3 up = vec3(0, 1, 0);
-const vec3 right = vec3(1, 0, 0);
-
-float sdSphere ( vec3 point, float radius ) {
-  return length(point)-radius;
-}
-
-vec4 raymarch(vec3 ray_origin, vec3 ray_dir) {
-  float t = 0.0;
-
-  for(int i = 0; i < max_steps; ++i) {
-    float dist = sdSphere(ray_origin + ray_dir*t, 0.5);
-    if (dist < epsilon) {
-      return vec4(1.0, 1.0, 1.0, 1.0);
-    }
-    t+=dist;
-  }
-
-  return vec4(0.0, 0.0, 0.0, 1.0);
-}
+float sdSphere ( vec3 point, float radius );
+float sdBox( vec3 p, vec3 b );
+vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color);
+float mapScene(vec3 point); //function that fully describes scene in distance
+//tests if ray hit object
+bool rayMarch(vec3 ray_origin , vec3 ray_dir,
+  out int num_iter , out float dist_traveled);
+vec3 compNormal(vec3 point);
 
 void main () {
+  //to generate perspective matrices
+  const vec3 cam_eye = vec3(0, 0, -2);
+  const vec3 cam_up = vec3(0, 1, 0);
+  const vec3 cam_right = vec3(1, 0, 0);
+  const vec3 cam_forward = vec3(0, 0, 1);
+  const float focal_length = 2.0;
 
   float u = gl_FragCoord.x * 2.0/min(u_resolution.x, u_resolution.y) - 1.0;
   float v = gl_FragCoord.y * 2.0/min(u_resolution.x, u_resolution.y) - 1.0;
-  vec3 ray_origin = right * u + up * v;
-  vec3 ray_dir = normalize(cross(right, up));
+  vec3 ray_origin = cam_eye;
+  vec3 ray_dir = normalize((cam_forward * focal_length) + cam_right * u + cam_up * v);
 
-  vec4 color = raymarch(ray_origin, ray_dir);
+  int num_iter; //number of iterations to hit an object
+  float dist_traveled; //distance ray has gone to hit object
+  bool ray_hit;
 
-  gl_FragColor = color;
+  //determine distance and num_iter
+  ray_hit = rayMarch(ray_origin, ray_dir, num_iter, dist_traveled);
+
+  vec3 color = vec3(0.0, 0.0, 0.0);
+
+  if (ray_hit) {
+    vec3 ray_loc = ray_origin + ray_dir*dist_traveled;
+    color = lambertLight(ray_loc, vec3(0.0, 0.5, -2.0), vec3(0.0, 1.0, 1.0));
+  }
+
+
+  gl_FragColor = vec4(color, 1.0);
+} //end main
+
+bool rayMarch(vec3 ray_origin
+             , vec3 ray_dir
+             , out int num_iter
+             , out float dist_traveled) {
+
+  const float epsilon = 0.001;
+  const float z_far_limit = 30.0;
+  const int max_steps = 64;
+  bool hit = false;
+
+  dist_traveled = 0.0;
+
+  for(int i = 0; i < max_steps; ++i) {
+    float dist_to_object = mapScene(ray_origin + ray_dir*dist_traveled);
+
+    if (dist_to_object < epsilon) {
+      hit = true;
+      break;
+    }
+    else if (dist_traveled > z_far_limit) {
+      hit = false;
+      break;
+    }
+
+    dist_traveled+=dist_to_object;
+    num_iter = i;
+  } //end for
+
+  return hit;
+} //end raymarch
+
+//perform numerical differentiation to get the normal vector.
+vec3 compNormal(vec3 point) {
+  float delta = 0.0001;
+
+  float dx = mapScene(point + vec3(delta, 0.0, 0.0)) - mapScene(point - vec3(delta, 0.0, 0.0));
+  float dy = mapScene(point + vec3(0.0, delta, 0.0)) - mapScene(point - vec3(0.0, delta, 0.0));
+  float dz = mapScene(point + vec3(0.0, 0.0, delta)) - mapScene(point - vec3(0.0, 0.0, delta));
+  return normalize(vec3(dx, dy, dz));
+}
+
+vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color) {
+  float light_intensity = 0.0;
+  vec3 normal = compNormal(point);
+  vec3 light_dir = normalize(light_pos - point);
+  light_intensity = clamp(dot(normal, light_dir), 0.0, 1.0);
+
+  return light_color * light_intensity;
+}
+
+float sdSphere (vec3 point, float radius) {
+  return length(point)-radius;
+}
+
+float sdBox(vec3 point, vec3 box_dim) {
+  vec3 dist = abs(point) - box_dim;
+  return min(max(dist.x,max(dist.y,dist.z)),0.0) +
+         length(max(dist,0.0));
+}
+
+//function that fully describes the scene in distances
+float mapScene(vec3 point) {
+  const float radius = 0.5;
+
+  float min1 = sdSphere(point + vec3 (-0.5, -0.0, 0.0), radius);
+  float min2 = sdBox(point + vec3 (0.0, 0.5, 0.0), vec3(0.25, 0.25, 0.25));
+  return min(min1, min2);
 }
 
 |]
