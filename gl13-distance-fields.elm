@@ -121,6 +121,7 @@ fragmentShader : Shader {} { unif | u_mouse_position:Vec2, u_resolution:Vec2 } {
 fragmentShader = [glsl|
 precision mediump float;
 uniform vec2 u_resolution;
+uniform vec2 u_mouse_position;
 
 float sdSphere ( vec3 point, float radius );
 float sdBox( vec3 p, vec3 b );
@@ -141,6 +142,12 @@ void main () {
 
   float u = gl_FragCoord.x * 2.0/min(u_resolution.x, u_resolution.y) - 1.0;
   float v = gl_FragCoord.y * 2.0/min(u_resolution.x, u_resolution.y) - 1.0;
+  float mouse_x = u_mouse_position.x*2.0/
+    min(u_resolution.x, u_resolution.y) -1.0;
+  float mouse_y = -u_mouse_position.y*2.0/
+    min(u_resolution.x, u_resolution.y) +1.0;
+
+
   vec3 ray_origin = cam_eye;
   vec3 ray_dir = normalize((cam_forward * focal_length) + cam_right * u + cam_up * v);
 
@@ -155,7 +162,7 @@ void main () {
 
   if (ray_hit) {
     vec3 ray_loc = ray_origin + ray_dir*dist_traveled;
-    color = lambertLight(ray_loc, vec3(0.0, 0.5, -2.0), vec3(0.0, 1.0, 1.0));
+    color = lambertLight(ray_loc, vec3(mouse_x, mouse_y, -2.0), vec3(0.0, 1.0, 1.0));
   }
 
 
