@@ -133,6 +133,7 @@ bool rayMarch(vec3 ray_origin , vec3 ray_dir,
 vec3 compNormal(vec3 point);
 vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color);
 float castShadow(vec3 point, vec3 light_pos, float shadow_intensity);
+vec3 applyFog( vec3 orig_color, vec3 fog_color, float distance );
 
 float mapScene(vec3 point); //function that fully describes scene in distance
 float sdSphere ( vec3 point, float radius );
@@ -146,6 +147,7 @@ void main () {
   const vec3 cam_right = normalize(cross(vec3(0, 1, 0), cam_forward)); //vec3(1, 0, 0);
   const vec3 cam_up = normalize(cross(cam_forward, cam_right));//vec3(0, 1, 0);
   const float focal_length = 2.0;
+  const vec3 sky_color = vec3(0.31, 0.47, 0.67);
 
   float u = gl_FragCoord.x * 2.0/min(u_resolution.x, u_resolution.y) - 1.0;
   float v = gl_FragCoord.y * 2.0/min(u_resolution.x, u_resolution.y) - 1.0;
@@ -165,14 +167,15 @@ void main () {
   //determine distance and num_iter
   ray_hit = rayMarch(ray_origin, ray_dir, num_iter, dist_traveled);
 
-  vec3 color = vec3(0.0, 0.0, 0.0);
+  vec3 color = sky_color;
 
   if (ray_hit) {
     vec3 ray_loc = ray_origin + ray_dir*dist_traveled;
-    color = (lambertLight(ray_loc, vec3(mouse_x, mouse_y, -2.0), vec3(0.0, 1.0, 1.0)) +
-      lambertLight(ray_loc, vec3(0.5, 0.5, 0.5), vec3(1.0, 0.0, 0.0)))/2.0;
+    color = (lambertLight(ray_loc, vec3(mouse_x, mouse_y, -2.0), vec3(0.5, 1.0, 1.0)) +
+      lambertLight(ray_loc, vec3(0.5, 0.5, 0.5), vec3(1.0, 0.5, 0.5)))/2.0;
   }
 
+  color = applyFog(color, sky_color, dist_traveled);
   gl_FragColor = vec4(color, 1.0);
 } //end main
 
@@ -218,7 +221,7 @@ vec3 compNormal(vec3 point) {
 }
 
 vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color) {
-  const vec3 ambient_light = vec3(0);// vec3(0.01, 0.01, 0.01);
+  const vec3 ambient_light = vec3(0.15, 0.2, 0.32);
   float light_intensity = 0.0;
 
   float shadow = castShadow(point, light_pos, 16.0);
@@ -236,7 +239,7 @@ vec3 lambertLight(vec3 point, vec3 light_pos, vec3 light_color) {
 
 float castShadow(vec3 point, vec3 light_pos, float shadow_intensity) {
   const float epsilon = 0.001;
-  const int max_steps = 64;
+  const int max_steps = 50;
 
   //should not travel farther than source
   float max_dist = length(light_pos - point);
@@ -266,6 +269,11 @@ float castShadow(vec3 point, vec3 light_pos, float shadow_intensity) {
   return result;
 }
 
+vec3 applyFog( vec3 orig_color, vec3 fog_color, float distance ) {
+  float fog_amount = 1.0 - exp( -distance * 0.2 );
+  return mix (orig_color, fog_color, fog_amount);
+}
+
 float sdSphere (vec3 point, float radius) {
   return length(point)-radius;
 }
@@ -291,7 +299,7 @@ float mapScene(vec3 point) {
   float o1 = sdSphere(point + vec3 (-0.5, 0.2, 0.0), radius);
   float o2 =
     udRoundBox(point + vec3 (0.5, 0.3, 0.0), vec3(0.25, 0.25, 0.25), 0.05);
-  float o3 = sdPlane(point + vec3(0.0, 0.5, 0.0), vec4(0.0, 1.0, 0.0, 1.0));
+  float o3 = sdPlane(point + vec3(0.0, -0.1, 0.0), vec4(0.0, 1.0, 0.0, 1.0));
   return min(min(o1, o2), o3);;
 }
 
