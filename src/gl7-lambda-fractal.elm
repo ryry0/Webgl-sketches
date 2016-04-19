@@ -34,7 +34,7 @@ texture =
 
 port textureFetcher : Task WebGL.Error ()
 port textureFetcher =
-  loadTexture "/textures/fractal-texture2.png"
+  loadTexture "./textures/fractal-texture2.png"
     `Task.andThen` \tex -> Signal.send texture.address (Just tex)
 
 -- Update

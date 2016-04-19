@@ -31,6 +31,15 @@ main_dropdown =
   , ("Randomly Moving Rectangle", Just "gl2-random-rect.html")
   , ("Randomly Moving Rectangle via Uniforms", Just "gl3-random-rect-uniform.html")
   , ("Pretty Cube", Just "gl4-prettycube.html")
+  , ("Cube Mouse Control", Just "gl5-cube-control.html")
+  , ("Textured Rectangle", Just "gl6-textured-rec.html")
+  , ("Lambda Fractal", Just "gl7-lambda-fractal.html")
+  , ("4th Power Julia Fractal", Just "gl8-julia4-fractal.html")
+  , ("Colored Point Field", Just "gl9-point-field.html")
+  , ("Point Cube", Just "gl10-point-cube.html")
+  , ("Strange Attractors", Just "gl11-strange-attractor.html")
+  , ("Signed Distance Fields", Just "gl13-distance-fields.html")
+  , ("Multiple Render Objects", Just "gl14-multi-cube.html")
   ]
 
 -- Update
