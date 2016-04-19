@@ -29,8 +29,8 @@ main_dropdown =
   [ ("" , Nothing)
   , ("Rectangle", Just "gl1-rect.html")
   , ("Randomly Moving Rectangle", Just "gl2-random-rect.html")
-  , ("Randomly Moving Rectangle via Uniforms", Just
-  "gl3-random-rect-uniform.html")
+  , ("Randomly Moving Rectangle via Uniforms", Just "gl3-random-rect-uniform.html")
+  , ("Pretty Cube", Just "gl4-prettycube.html")
   ]
 
 -- Update
