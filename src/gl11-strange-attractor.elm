@@ -1,5 +1,6 @@
 import Color exposing (..) -- colors
 import Graphics.Element exposing (..)
+import Graphics.Input
 import Math.Vector3 exposing (..)
 import Math.Vector2 exposing (..)
 import Math.Matrix4 exposing (..)
@@ -21,6 +22,7 @@ main = -- map our scene onto webgl
     , perspective = perspective 1 1
     , resolution = (1000, 1000)
     , attractor = thomas
+    , scale = 0.08
     }
     in
     let model  = Signal.foldp update initial_model action in
@@ -36,16 +38,39 @@ type alias Vertex =
 type alias Attractor =
   ( Float -> Float -> Float -> (Float, Float, Float) )
 
+type AttractorType
+  = Thomas
+  | Lorenz
+  | Aizawa
+  | Anishchenko
+  | Bouali
+  | Coullet
+  | Yu
+
 type alias Model =
   { renderable : List Vertex
   , rotation : Mat4
   , perspective : Mat4
   , resolution : (Int, Int)
   , attractor : Attractor
+  , scale : Float
+  --, initial_point : (Float, Float, Float)
   }
 
-scale : Float
-scale = 0.08
+dropdown : Element
+dropdown =
+  Graphics.Input.dropDown (Signal.message dropdownaction.address)
+  [ ("Thomas", Thomas)
+  , ("Lorenz", Lorenz)
+  , ("Aizawa", Aizawa)
+  , ("Anishchenko Astakhov", Anishchenko)
+  , ("Bouali", Bouali)
+  , ("Coullet", Coullet)
+  , ("Yu Wang", Yu)
+  ]
+
+init_scale : Float
+init_scale = 0.08
 --0.01 for lorenz
 --0.20 for aizawa
 --0.05 for ashchch
@@ -62,8 +87,8 @@ perspective winx winy =
   mul (makePerspective 45 (winx/winy) 0.01 100)
       (makeLookAt (vec3 0 0 1) (vec3 0 0 0) (vec3 0 1 0))
 
-scaling : Mat4
-scaling =
+scaling : Float -> Mat4
+scaling scale =
   Math.Matrix4.scale (vec3 scale scale scale) Math.Matrix4.identity
 
 genrotate : Float -> Mat4
@@ -92,6 +117,12 @@ initialpoint =
 -- -1.1 1.1 1.1 for thomas
 -- 0.1 0.1 0.1 for coullet
 -- 1.1 1.1 1.1 for yu_wang
+
+genvertex : Float -> Float -> Float -> Vertex
+genvertex x y z =
+  { a_position = vec3 x y z
+   , a_time = 0.0
+   }
 
 queue : List Vertex -> List Vertex
 queue list =
@@ -222,17 +253,78 @@ yu_wang x y z =
     ( newx, newy, newz )
 
 -- Update
-type Action = Resolution (Int, Int) | DeltaTime Float
+type Action = Reset Bool | Select AttractorType | Resolution (Int, Int) | DeltaTime Float
+
+resetbuttonaction : Signal.Mailbox Bool
+resetbuttonaction = Signal.mailbox False
+
+dropdownaction : Signal.Mailbox AttractorType
+dropdownaction = Signal.mailbox Thomas
 
 action : Signal Action
 action =
-  Signal.merge
-    (Signal.map Resolution Window.dimensions)
-    (Signal.map DeltaTime <| fps 30)
+  Signal.mergeMany
+    [ Signal.map Reset resetbuttonaction.signal
+    , Signal.map Select dropdownaction.signal
+    , Signal.map Resolution Window.dimensions
+    , Signal.map DeltaTime <| fps 30
+    ]
 
 update : Action -> Model -> Model
 update action model =
   case action of
+    Select attractor ->
+      case attractor of
+        Thomas ->
+        { model
+        | renderable = [initialpoint]
+        , scale = 0.08
+        , attractor = thomas
+        }
+        Lorenz ->
+        { model
+        | renderable = [genvertex -1.1 0 0]
+        , scale = 0.01
+        , attractor = lorenz
+        }
+        Aizawa ->
+        { model
+        | renderable = [genvertex -1.1 0 0]
+        , scale = 0.20
+        , attractor = aizawa
+        }
+        Anishchenko ->
+        { model
+        | renderable = [genvertex 0.1 0.0 0.0]
+        , scale = 0.05
+        , attractor = anishchenko_astakhov
+        }
+        Bouali ->
+        { model
+        | renderable = [genvertex -1.1 1.0 0.0]
+        , scale = 0.03
+        , attractor = bouali
+        }
+        Coullet ->
+        { model
+        | renderable = [genvertex 0.1 0.1 0.1]
+        , scale = 0.1
+        , attractor = coullet
+        }
+        Yu ->
+        { model
+        | renderable = [genvertex 1.1 1.1 1.1]
+        , scale = 0.008
+        , attractor = yu_wang
+        }
+
+    Reset state ->
+      if state then
+        { model
+        | renderable = [initialpoint]
+        }
+      else
+        model
     Resolution (x, y) ->
       { model
       | perspective = perspective (toFloat x) (toFloat y)
@@ -245,18 +337,28 @@ update action model =
       }
 
 -- View
-view : Model -> Element
-view model =
+glview : Model -> Element
+glview model =
   webgl (fst model.resolution, snd model.resolution)
       [ render vertexShader fragmentShader
         (LineStrip model.renderable)
         { perspective = model.perspective
         , rotation = model.rotation
-        , scaling = scaling
+        , scaling = scaling model.scale
         , resolution = vec2 (toFloat <| fst model.resolution)
             (toFloat <| snd model.resolution)
         }
       ]
+
+view : Model -> Element
+view model = layers [ glview model
+                    , flow down
+                      [ dropdown
+                      , Graphics.Input.button
+                        (Signal.message resetbuttonaction.address True)
+                        "Reset"
+                      ]
+                    ]
 
 -- Shaders
 vertexShader : Shader { attr | a_position:Vec3, a_time : Float }
