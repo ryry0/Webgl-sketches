@@ -26,27 +26,26 @@ initial_model = { source = "gl1-rect.html", resolution = (1000, 1000) }
 main_dropdown : Element
 main_dropdown =
   Graphics.Input.dropDown (Signal.message dropdownaction.address)
-  [ ("" , Nothing)
-  , ("Rectangle", Just "gl1-rect.html")
-  , ("Randomly Moving Rectangle", Just "gl2-random-rect.html")
-  , ("Randomly Moving Rectangle via Uniforms", Just "gl3-random-rect-uniform.html")
-  , ("Pretty Cube", Just "gl4-prettycube.html")
-  , ("Cube Mouse Control", Just "gl5-cube-control.html")
-  , ("Textured Rectangle", Just "gl6-textured-rec.html")
-  , ("Lambda Fractal", Just "gl7-lambda-fractal.html")
-  , ("4th Power Julia Fractal", Just "gl8-julia4-fractal.html")
-  , ("Colored Point Field", Just "gl9-point-field.html")
-  , ("Point Cube", Just "gl10-point-cube.html")
-  , ("Strange Attractors", Just "gl11-strange-attractor.html")
-  , ("Signed Distance Fields", Just "gl13-distance-fields.html")
-  , ("Multiple Render Objects", Just "gl14-multi-cube.html")
+  [ ("Rectangle",  "gl1-rect.html")
+  , ("Randomly Moving Rectangle",  "gl2-random-rect.html")
+  , ("Randomly Moving Rectangle via Uniforms",  "gl3-random-rect-uniform.html")
+  , ("Pretty Cube",  "gl4-prettycube.html")
+  , ("Cube Mouse Control",  "gl5-cube-control.html")
+  , ("Textured Rectangle",  "gl6-textured-rec.html")
+  , ("Lambda Fractal",  "gl7-lambda-fractal.html")
+  , ("4th Power Julia Fractal",  "gl8-julia4-fractal.html")
+  , ("Colored Point Field",  "gl9-point-field.html")
+  , ("Point Cube",  "gl10-point-cube.html")
+  , ("Strange Attractors",  "gl11-strange-attractor.html")
+  , ("Signed Distance Fields",  "gl13-distance-fields.html")
+  , ("Multiple Render Objects",  "gl14-multi-cube.html")
   ]
 
 -- Update
-type Action = Select (Maybe String) | Resolution (Int, Int)
+type Action = Select String | Resolution (Int, Int)
 
-dropdownaction : Signal.Mailbox (Maybe String)
-dropdownaction = Signal.mailbox Nothing
+dropdownaction : Signal.Mailbox String
+dropdownaction = Signal.mailbox "Rectangle"
 
 action : Signal Action
 action = Signal.merge
@@ -56,13 +55,8 @@ action = Signal.merge
 update : Action -> Model -> Model
 update action model =
   case action of
-    Select maybestring ->
-      case maybestring of
-        Nothing ->
-         { model | source = initial_model.source }
-
-        Just string ->
-         { model | source = string }
+    Select string ->
+      { model | source = string }
 
     Resolution a ->
       { model | resolution = a }

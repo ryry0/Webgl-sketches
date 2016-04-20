@@ -11926,7 +11926,15 @@ Elm.Main.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $Window = Elm.Window.make(_elm);
    var _op = {};
-   var dropdownaction = $Signal.mailbox($Maybe.Nothing);
+   var update = F2(function (action,model) {
+      var _p0 = action;
+      if (_p0.ctor === "Select") {
+            return _U.update(model,{source: _p0._0});
+         } else {
+            return _U.update(model,{resolution: _p0._0});
+         }
+   });
+   var dropdownaction = $Signal.mailbox("Rectangle");
    var Resolution = function (a) {
       return {ctor: "Resolution",_0: a};
    };
@@ -11936,46 +11944,39 @@ Elm.Main.make = function (_elm) {
    A2($Signal.map,Resolution,$Window.dimensions));
    var main_dropdown = A2($Graphics$Input.dropDown,
    $Signal.message(dropdownaction.address),
-   _U.list([{ctor: "_Tuple2",_0: "",_1: $Maybe.Nothing}
-           ,{ctor: "_Tuple2"
-            ,_0: "Rectangle"
-            ,_1: $Maybe.Just("gl1-rect.html")}
+   _U.list([{ctor: "_Tuple2",_0: "Rectangle",_1: "gl1-rect.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Randomly Moving Rectangle"
-            ,_1: $Maybe.Just("gl2-random-rect.html")}
+            ,_1: "gl2-random-rect.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Randomly Moving Rectangle via Uniforms"
-            ,_1: $Maybe.Just("gl3-random-rect-uniform.html")}
-           ,{ctor: "_Tuple2"
-            ,_0: "Pretty Cube"
-            ,_1: $Maybe.Just("gl4-prettycube.html")}
+            ,_1: "gl3-random-rect-uniform.html"}
+           ,{ctor: "_Tuple2",_0: "Pretty Cube",_1: "gl4-prettycube.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Cube Mouse Control"
-            ,_1: $Maybe.Just("gl5-cube-control.html")}
+            ,_1: "gl5-cube-control.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Textured Rectangle"
-            ,_1: $Maybe.Just("gl6-textured-rec.html")}
+            ,_1: "gl6-textured-rec.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Lambda Fractal"
-            ,_1: $Maybe.Just("gl7-lambda-fractal.html")}
+            ,_1: "gl7-lambda-fractal.html"}
            ,{ctor: "_Tuple2"
             ,_0: "4th Power Julia Fractal"
-            ,_1: $Maybe.Just("gl8-julia4-fractal.html")}
+            ,_1: "gl8-julia4-fractal.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Colored Point Field"
-            ,_1: $Maybe.Just("gl9-point-field.html")}
-           ,{ctor: "_Tuple2"
-            ,_0: "Point Cube"
-            ,_1: $Maybe.Just("gl10-point-cube.html")}
+            ,_1: "gl9-point-field.html"}
+           ,{ctor: "_Tuple2",_0: "Point Cube",_1: "gl10-point-cube.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Strange Attractors"
-            ,_1: $Maybe.Just("gl11-strange-attractor.html")}
+            ,_1: "gl11-strange-attractor.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Signed Distance Fields"
-            ,_1: $Maybe.Just("gl13-distance-fields.html")}
+            ,_1: "gl13-distance-fields.html"}
            ,{ctor: "_Tuple2"
             ,_0: "Multiple Render Objects"
-            ,_1: $Maybe.Just("gl14-multi-cube.html")}]));
+            ,_1: "gl14-multi-cube.html"}]));
    var view = function (model) {
       return A2($Html.div,
       _U.list([]),
@@ -11988,19 +11989,6 @@ Elm.Main.make = function (_elm) {
    };
    var initial_model = {source: "gl1-rect.html"
                        ,resolution: {ctor: "_Tuple2",_0: 1000,_1: 1000}};
-   var update = F2(function (action,model) {
-      var _p0 = action;
-      if (_p0.ctor === "Select") {
-            var _p1 = _p0._0;
-            if (_p1.ctor === "Nothing") {
-                  return _U.update(model,{source: initial_model.source});
-               } else {
-                  return _U.update(model,{source: _p1._0});
-               }
-         } else {
-            return _U.update(model,{resolution: _p0._0});
-         }
-   });
    var Model = F2(function (a,b) {
       return {source: a,resolution: b};
    });
